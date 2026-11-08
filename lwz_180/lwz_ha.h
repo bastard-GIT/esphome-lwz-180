@@ -75,9 +75,9 @@ static const Def kDefs[] = {
     // 35/36 etwa alle 1,3 s (PT1000: 35 passt zu 09 Fortluft, 36 zu 07 Zuluft, auf ca. 0,2 K)
     {0x12, "zuluft_volumenstrom_soll", "Volumenstrom Soll Zuluft", "m³/h", "volume_flow_rate", 1, false, nullptr},
     {0x13, "abluft_volumenstrom_soll", "Volumenstrom Soll Abluft", "m³/h", "volume_flow_rate", 1, false, nullptr},
-    // Fuehlerwiderstand, Diagnose (kein entity_category in Def, daher nur Icon). Zuordnung 35/36 laut PR #2 Abluft/Zuluft,
-    // unsere Logs sprechen fuer 35 = Fortluft-, 36 = Zuluftfuehler (Zuordnung ungeklaert, Name nach PR)
-    {0x35, "fuehler_abluft_widerstand", "Fühlerwiderstand Abluft", "Ω", nullptr, 10, false, "mdi:omega"},
+    // Fuehlerwiderstand, Diagnose (kein entity_category in Def, daher nur Icon). Zuordnung nach unseren Logs: 35 = Fortluft, 36 = Zuluft
+    // (PT1000-Widerstand passt zu Typ 09 bzw. 07). PR #2 nennt 35 = Abluft; Name hier nach unseren Logs.
+    {0x35, "fuehler_fortluft_widerstand", "Fühlerwiderstand Fortluft", "Ω", nullptr, 10, false, "mdi:omega"},
     {0x36, "fuehler_zuluft_widerstand", "Fühlerwiderstand Zuluft", "Ω", nullptr, 10, false, "mdi:omega"},
     // Lüfterstufe Einstellung aus Typ 02 (nur bei Stufenwechsel, 0,4-1,5 s nach dem Display; 05/69/6d identisch).
     // Bewusst separater Sensor: "luefterstufe" bleibt vom Display gespeist (schneller, auch nach Neustart).

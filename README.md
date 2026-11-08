@@ -71,7 +71,7 @@ All belong to one device. Sensors (entities are created when the value is first 
 - Zuluftlüfter Ansteuerung (supply fan control), Fortluftlüfter Ansteuerung (outgoing fan control) (%), Zuluftlüfter Drehzahl (supply fan speed), Fortluftlüfter Drehzahl (outgoing fan speed) (rpm)
 - Lüfterstufe (fan level) (from the display), Lüfterstufe Einstellung (fan level setting, from type 02; sent only on a level change, 0.4-1.5 s after the display)
 - Volumenstrom Soll Zuluft, Volumenstrom Soll Abluft (target airflow, m³/h; confirmed on our bus)
-- Fühlerwiderstand Abluft, Fühlerwiderstand Zuluft (sensor resistance, Ω, PT1000; confirmed on our bus)
+- Fühlerwiderstand Fortluft, Fühlerwiderstand Zuluft (sensor resistance, Ω, PT1000; confirmed on our bus; PR #2 lists 35 as exhaust air, our logs show outgoing air)
 - Not yet seen on our bus (from PR #2 of kdarnok/lwz180): Bypass (0/1), Volumenstrom Stufe 0-3 (P6-P9, m³/h), Druck P10-P13 (pressure, Pa)
 - Vorheizung Leistung (preheater power), Filterlaufzeit (filter runtime), Betriebsdauer Gerät (device operating hours), Betriebsdauer Lüfter (fan operating hours) (only known from an external source, not yet seen on our bus)
 
