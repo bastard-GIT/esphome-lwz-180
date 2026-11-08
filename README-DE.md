@@ -101,6 +101,10 @@ Ebenfalls Dank an KKSzymanowski für die erweiterte Tabelle der Istwert-Typen ([
 
 Dieses Paket enthält keinen Code aus kdarnok/lwz180. Es ist eine eigene Umsetzung für ESP32 und ESPHome und nutzt die dort dokumentierten Erkenntnisse.
 
+## KI-Unterstützung
+
+Code, Dokumentation und Auswerte-Werkzeuge dieses Pakets wurden mit Unterstützung von KI erstellt (Claude von Anthropic, über Claude Code). Die Protokoll-Analyse beruht auf eigenen Messungen am Gerät (Logic-Analyzer- und Bus-Logs) und den unter Dank genannten Quellen. Die Firmware läuft beim Autor auf echter Hardware (ESP32-S3, Stiebel Eltron LWZ 180) und ist dort getestet. Einsatz auf eigene Verantwortung. Bei Tasten- und Schreibbefehlen auf den Bus ist Vorsicht geboten.
+
 ## Lizenz
 
 GPL-3.0, siehe [LICENSE](LICENSE). Die I2C-Busanalyse, auf der dieses Paket aufbaut, stammt von kdarnok/lwz180 (GPL-2.0); es wurde kein Code daraus übernommen.

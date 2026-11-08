@@ -101,6 +101,10 @@ Thanks also to KKSzymanowski for the extended table of actual-value types ([PR #
 
 This package contains no code from kdarnok/lwz180. It is an independent implementation for ESP32 and ESPHome and uses the findings documented there.
 
+## AI assistance
+
+Code, documentation and analysis tools of this package were created with the help of AI (Claude by Anthropic, via Claude Code). The protocol analysis is based on the author's own measurements on the device (logic analyzer and bus logs) and on the sources named under Credits. The firmware runs on the author's real hardware (ESP32-S3, Stiebel Eltron LWZ 180) and is tested there. Use at your own risk. Be careful with key and write commands sent onto the bus.
+
 ## License
 
 GPL-3.0, see [LICENSE](LICENSE). The I2C bus analysis this package builds on comes from kdarnok/lwz180 (GPL-2.0); no code was taken from it.
