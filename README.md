@@ -1,91 +1,101 @@
 # esphome-lwz-180
 
-ESPHome-Paket für das Lüftungsgerät **Stiebel Eltron LWZ 180**. Der ESP hängt als I2C-Slave am Bus des Bedienteils, liest Istwerte und Display mit und meldet sie per MQTT-Discovery als eigenes Home-Assistant-Gerät. Über ein HA-Select und einen HA-Switch kann er die Lüfterstufe setzen und die Intensivlüftung starten.
+English | [Deutsch](README-DE.md)
 
-Das Paket läuft auf jedem ESP32 mit esp-idf und MQTT. Getestet: ESP32-S3, ESP-IDF 5.5, ESPHome 2026.10.
+ESPHome package for the Stiebel Eltron LWZ 180 ventilation unit. The ESP hangs as an I2C slave on the bus of the control panel, reads and reports actual values and display, and publishes them via MQTT discovery as its own Home Assistant device. Via an HA select and an HA switch it can set the fan level and start intensive ventilation.
+
+The analysis of the I2C bus originates from the predecessor project [kdarnok/lwz180](https://github.com/kdarnok/lwz180/), see Credits.
+
+The package runs on any ESP32 with esp-idf and MQTT. Tested: ESP32-S3, ESP-IDF 5.5, ESPHome 2026.10.
 
 ## Hardware
 
-- ESP als **Hardware-I2C-Slave** am Bedienteil-Bus zwischen Bedienteil und LWZ-Steuerung (Slave-Adresse 42, dazu General Call, kein Clock-Stretching).
-- Galvanische Trennung über eine Trägerplatine mit **ISO1540**. ESP-Seite: SDA GPIO15, SCL GPIO17 (Beispiel, per Substitution änderbar). Die ESP-seitigen Pull-ups sind nicht bestückt, die internen Pull-ups des ESP32-S3 reichen. Auf der LWZ-Seite wirken die Pull-ups der LWZ.
-- Der ESP schreibt nur kurz als Master, wenn er Tasten sendet (Lüfterstufe, Intensivlüftung). Dazu baut er den Slave ab und danach wieder auf.
+- ESP as **hardware I2C slave** on the control panel bus between control panel and LWZ controller (slave address 42, plus general call, no clock stretching).
+- Galvanic isolation via a carrier board with **ISO1540**. ESP side: SDA GPIO15, SCL GPIO17 (example, changeable via substitution). The ESP-side pull-ups are not fitted; the internal pull-ups of the ESP32-S3 are sufficient. On the LWZ side, the pull-ups of the LWZ apply.
+- The ESP acts as master only briefly when it sends keys (fan level, intensive ventilation). For this it takes the slave down and brings it back up afterwards.
 
-## Einbinden
+## Installation
 
-Remote, in der eigenen ESPHome-YAML:
+Remote, in your own ESPHome YAML:
 
 ```yaml
 packages:
   lwz_180: github://bastard-GIT/esphome-lwz-180/lwz_180.yaml@main
 ```
 
-Für stabile Builds statt `@main` einen Tag oder Commit-Hash verwenden. Ein vollständiges Beispiel steht in `example/lwz_180_example.yaml` (lokal eingebunden mit `!include ../lwz_180.yaml`). Dort liegt auch `secrets.yaml.example`.
+For stable builds, use a tag or commit hash instead of `@main`. A complete example is in `example/lwz_180_example.yaml` (included locally with `!include ../lwz_180.yaml`). `secrets.yaml.example` is also there.
 
-## Voraussetzungen
+## Requirements
 
-- ESP32 mit `esp32: framework: type: esp-idf`.
-- `mqtt:` Werte, Discovery und Befehle laufen über MQTT, nicht über die Native API.
-- `ota:` mit `platform: esphome` und `id: ota_esphome` (oder eine andere id, dann `lwz_ota_id` setzen). Das Paket erweitert diese Komponente per `!extend`. Der Slave wird während OTA abgebaut.
+- ESP32 with `esp32: framework: type: esp-idf`.
+- `mqtt:` values, discovery and commands run via MQTT, not via the Native API.
+- `ota:` with `platform: esphome` and `id: ota_esphome` (or another id, then set `lwz_ota_id`). The package extends this component via `!extend`. The slave is taken down during OTA.
 
-Das Paket setzt selbst die nötigen `sdkconfig_options` (I2C-Slave-Treiber V2, `CONFIG_I2C_ISR_IRAM_SAFE`, Ringbuffer-Funktionen im IRAM) und bindet seine Header aus dem Ordner `lwz_180/` ein.
+The package sets the required `sdkconfig_options` itself (I2C slave driver V2, `CONFIG_I2C_ISR_IRAM_SAFE`, ring buffer functions in IRAM) and includes its headers from the folder `lwz_180/`.
 
-## Substitutionen
+## Substitutions
 
-Standardwerte, in der eigenen YAML unter `substitutions:` überschreibbar.
+Default values, overridable in your own YAML under `substitutions:`.
 
-| Substitution | Standard | Bedeutung |
+| Substitution | Default | Meaning |
 |---|---|---|
-| `lwz_sda_gpio` | `15` | SDA-GPIO (Nummer ohne "GPIO") |
-| `lwz_scl_gpio` | `17` | SCL-GPIO |
-| `lwz_i2c_slave_addr` | `42` | 7-Bit-Adresse des ESP als Slave |
-| `lwz_internal_pullup` | `true` | interne Pull-ups |
-| `lwz_prefix` | `lwz180` | MQTT- und ID-Präfix der LWZ-Werte |
-| `lwz_device_name` | `Stiebel Eltron LWZ 180` | HA-Gerätename |
-| `lwz_model` | `LWZ 180` | HA-Modell |
-| `lwz_availability_topic` | `""` | leer = Availability-Topic der MQTT-Komponente (Standard `<topic_prefix>/status`), sonst eigenes Topic, z. B. `heatingpump/status` |
-| `lwz_ota_id` | `ota_esphome` | id der OTA-Komponente |
+| `lwz_sda_gpio` | `15` | SDA GPIO (number without "GPIO") |
+| `lwz_scl_gpio` | `17` | SCL GPIO |
+| `lwz_i2c_slave_addr` | `42` | 7-bit address of the ESP as slave |
+| `lwz_internal_pullup` | `true` | internal pull-ups |
+| `lwz_prefix` | `lwz180` | MQTT and ID prefix of the LWZ values |
+| `lwz_device_name` | `Stiebel Eltron LWZ 180` | HA device name |
+| `lwz_model` | `LWZ 180` | HA model |
+| `lwz_availability_topic` | `""` | empty = availability topic of the MQTT component (default `<topic_prefix>/status`), otherwise own topic, e.g. `heatingpump/status` |
+| `lwz_ota_id` | `ota_esphome` | id of the OTA component |
 
-## MQTT-Topics
+## MQTT topics
 
-| Topic | Inhalt |
+| Topic | Content |
 |---|---|
-| `<prefix>/<wert>/state` | Istwerte |
-| `<prefix>/availability` | online, solange gültige LWZ-Pakete kommen (offline nach 15 min ohne Paket) |
-| `<prefix>/luefterstufe/set` | Lüfterstufe setzen: `0` bis `2`, `3` = Intensivlüftung an |
+| `<prefix>/<wert>/state` | Actual values |
+| `<prefix>/availability` | online as long as valid LWZ packets arrive (offline after 15 min without a packet) |
+| `<prefix>/luefterstufe/set` | Set fan level: `0` to `2`, `3` = intensive ventilation on |
 | `<prefix>/intensivlueftung/set` | `ON` / `OFF` |
-| `<prefix>/intensivlueftung/state` | Zustand (retained) |
-| `<prefix>/steuerung/result` | Ergebnistext des letzten Auftrags (nicht retained) |
-| `homeassistant/sensor/<prefix>/<wert>/config` | MQTT-Discovery |
+| `<prefix>/intensivlueftung/state` | State (retained) |
+| `<prefix>/steuerung/result` | Result text of the last command (not retained) |
+| `homeassistant/sensor/<prefix>/<wert>/config` | MQTT discovery |
 
-## Home-Assistant-Entitäten
+## Home Assistant entities
 
-Alle gehören zu einem Gerät. Sensoren (Entitäten entstehen beim ersten Empfang des Werts):
+All belong to one device. Sensors (entities are created when the value is first received):
 
-- Temperaturen: Außenlufttemperatur, Zulufttemperatur, Ablufttemperatur, Fortlufttemperatur, Taupunkt Abluft, Taupunkt Außenluft
-- Feuchte Außenluft, Feuchte Abluft
-- Volumenstrom Zuluft, Volumenstrom Fortluft (m³/h)
-- Zuluftlüfter Ansteuerung, Fortluftlüfter Ansteuerung (%), Zuluftlüfter Drehzahl, Fortluftlüfter Drehzahl (rpm)
-- Lüfterstufe (aus dem Display)
-- Vorheizung Leistung, Filterlaufzeit, Betriebsdauer Gerät, Betriebsdauer Lüfter (nur nach Fremdquelle bekannt, auf unserem Bus bisher nicht gesehen)
+- Temperatures: Außenlufttemperatur (outside air temperature), Zulufttemperatur (supply air temperature), Ablufttemperatur (exhaust air temperature), Fortlufttemperatur (outgoing air temperature), Taupunkt Abluft (exhaust air dew point), Taupunkt Außenluft (outside air dew point)
+- Humidity outside air: Feuchte Außenluft (outside air humidity), Feuchte Abluft (exhaust air humidity)
+- Airflow: Volumenstrom Zuluft (supply airflow), Volumenstrom Fortluft (outgoing airflow) (m³/h)
+- Zuluftlüfter Ansteuerung (supply fan control), Fortluftlüfter Ansteuerung (outgoing fan control) (%), Zuluftlüfter Drehzahl (supply fan speed), Fortluftlüfter Drehzahl (outgoing fan speed) (rpm)
+- Lüfterstufe (fan level) (from the display)
+- Vorheizung Leistung (preheater power), Filterlaufzeit (filter runtime), Betriebsdauer Gerät (device operating hours), Betriebsdauer Lüfter (fan operating hours) (only known from an external source, not yet seen on our bus)
 
-Steuerung:
+Control:
 
-- Select **Lüfterstufe einstellen** (Optionen 0 bis 3)
-- Switch **Intensivlüftung**
+- Select **Lüfterstufe einstellen** (set fan level) (options 0 to 3)
+- Switch **Intensivlüftung** (intensive ventilation)
 
-## Bedienung der Lüfterstufe
+## Operating the fan level
 
-Der ESP drückt Tasten wie das Bedienteil und prüft das Ergebnis im Display (geschlossener Regelkreis).
+The ESP presses keys like the control panel and checks the result on the display (closed control loop).
 
-- Stufe 0 bis 2: Drehrad-Burst, 5 Pakete im Abstand von 100 ms (Code `02` = auf, `01` = ab) ergeben eine Stufe. Etwa jeder vierte Burst wirkt nicht, meist nach einem Richtungswechsel. Deshalb prüft die Firmware die Stufe im Display-Paket und wiederholt den Burst, höchstens 8-mal, höchstens 60 s je Auftrag.
-- Stufe 3 ist per Drehrad nicht erreichbar, nur als Intensivlüftung. Das Select-Element "3" startet sie.
-- Intensivlüftung ein: Power-Vent lang (`08`), nach 500 ms `0c`. Sie läuft bis zum Ende des Timers. Vorzeitig beenden geht nur durch Verstellen der Stufe, der Switch AUS sendet dazu einen Burst ab.
-- Gesendet wird nur, wenn das Display den Grundzustand zeigt, also kein Menü offen ist. Sonst würde das Drehrad im Menü blättern.
+- Level 0 to 2: rotary wheel burst, 5 packets at 100 ms intervals (code `02` = up, `01` = down) produce one level. About every fourth burst has no effect, mostly after a direction change. For this reason the firmware checks the level in the display packet and repeats the burst, at most 8 times, at most 60 s per command.
+- Level 3 cannot be reached with the rotary wheel, only as intensive ventilation. The select element "3" starts it.
+- Intensive ventilation on: power-vent long press (`08`), after 500 ms `0c`. It runs until the end of the timer. Ending it early is only possible by changing the level; the switch OFF sends one burst for this.
+- Keys are sent only when the display shows the basic state, i.e. no menu is open. Otherwise the rotary wheel would scroll through the menu.
 
-## Diagnose
+## Diagnostics
 
-Topics `stiebel-i2c/*`: `status` (alle 5 s), `rx` (Sniffer, Standard aus), `crash`, Befehle `cmd/sniff`, `cmd/scan`, `cmd/key`. `cmd/key` sendet Tastencodes auf den Bus, mit Vorsicht benutzen.
+Topics `stiebel-i2c/*`: `status` (every 5 s), `rx` (sniffer, off by default), `crash`, commands `cmd/sniff`, `cmd/scan`, `cmd/key`. `cmd/key` sends key codes onto the bus, use with caution.
 
-## Lizenz
+## Credits
 
-Lizenz: noch offen.
+The basis for this package is the project [kdarnok/lwz180](https://github.com/kdarnok/lwz180/). It analyzed and documented the I2C bus of the LWZ 180: packet format with CRC, actual values, control panel key codes and the display encoding. Many thanks to kdarnok for this groundwork.
+
+This package contains no code from kdarnok/lwz180. It is an independent implementation for ESP32 and ESPHome and uses the findings documented there.
+
+## License
+
+License: not yet decided.
