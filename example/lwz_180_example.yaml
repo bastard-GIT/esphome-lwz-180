@@ -1,0 +1,37 @@
+# Minimalbeispiel: generisches ESP32-S3 mit dem Paket lwz_180.
+# Vor dem Bauen secrets.yaml.example nach secrets.yaml kopieren und anpassen.
+
+esphome:
+  name: lwz-180
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+
+logger:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+
+ota:
+  - platform: esphome
+    id: ota_esphome
+
+packages:
+  # lokal (Entwicklung)
+  lwz_180: !include ../lwz_180.yaml
+  # remote (fuer Stabilitaet @main durch Tag oder Commit ersetzen):
+  # lwz_180: github://bastard-GIT/esphome-lwz-180/lwz_180.yaml@main
+
+# Optional: Pins und Namen ueberschreiben
+# substitutions:
+#   lwz_sda_gpio: "15"
+#   lwz_scl_gpio: "17"
+#   lwz_availability_topic: "heatingpump/status"

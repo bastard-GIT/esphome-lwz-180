@@ -1,0 +1,88 @@
+#
+#  ESPHome-Paket lwz_180: Stiebel Eltron LWZ 180 (Lueftungsgeraet) am I2C-Bus des Bedienteils.
+#
+#  Der ESP haengt als Hardware-I2C-Slave (Adresse ${lwz_i2c_slave_addr}, dazu General Call) am Bus zwischen
+#  Bedienteil und LWZ-Steuerung. Er liest die Istwerte und das Display mit und meldet sie als eigenes
+#  HA-Geraet per MQTT-Discovery. Ueber das HA-Select "Lüfterstufe einstellen" und den Switch
+#  "Intensivlüftung" drueckt er Tasten wie das Bedienteil.
+#
+#  Einbinden (remote):
+#    packages:
+#      lwz_180: github://bastard-GIT/esphome-lwz-180/lwz_180.yaml@main
+#
+#  Voraussetzungen in der eigenen YAML:
+#    - ESP32 mit esp-idf (esp32: framework: type: esp-idf). Getestet: ESP32-S3, ESP-IDF 5.5, ESPHome 2026.10.
+#    - mqtt: (Werte, Discovery und Befehle laufen ueber MQTT, nicht ueber die Native API).
+#    - ota: mit id ota_esphome (oder Substitution lwz_ota_id). Der Slave wird waehrend OTA abgebaut.
+#
+#  Substitutionen (Standardwerte unten, in der eigenen YAML ueberschreiben):
+#    lwz_sda_gpio, lwz_scl_gpio   GPIO-Nummern ohne "GPIO"
+#    lwz_i2c_slave_addr           7-Bit-Adresse des ESP als Slave
+#    lwz_internal_pullup          interne Pull-ups "true"/"false"
+#    lwz_prefix                   MQTT-Praefix und ID-Praefix der LWZ-Werte (Topics <prefix>/<wert>/state)
+#    lwz_device_name, lwz_model   HA-Geraetename und Modell
+#    lwz_availability_topic       "" = Availability-Topic der MQTT-Komponente (Standard <topic_prefix>/status)
+#    lwz_ota_id                   id der OTA-Komponente
+#
+#  MQTT:
+#    <prefix>/<wert>/state, <prefix>/availability, <prefix>/luefterstufe/set, <prefix>/intensivlueftung/set
+#    Diagnose: stiebel-i2c/status (5 s), stiebel-i2c/rx (Sniffer, Standard aus), stiebel-i2c/crash,
+#    Befehle stiebel-i2c/cmd/sniff, cmd/scan, cmd/key
+#
+
+substitutions:
+  lwz_sda_gpio: "15"
+  lwz_scl_gpio: "17"
+  lwz_i2c_slave_addr: "42"
+  lwz_internal_pullup: "true"
+  lwz_prefix: "lwz180"
+  lwz_device_name: "Stiebel Eltron LWZ 180"
+  lwz_model: "LWZ 180"
+  lwz_availability_topic: ""
+  lwz_ota_id: ota_esphome
+
+esp32:
+  framework:
+    sdkconfig_options:
+      # I2C-Slave-Treiber V2: on_receive mit Laenge (V1 liefert keine). Siehe i2c_slave_rx.h
+      CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2: "y"
+      # I2C-ISR im IRAM: laeuft auch waehrend Flash-Zugriffen (NVS, OTA, Log) weiter
+      CONFIG_I2C_ISR_IRAM_SAFE: "y"
+      # IDF 5.5.6: i2c_slave_read_rx (IRAM, im ISR) ruft vRingbufferGetInfo auf. Liegt das im Flash,
+      # haengt der ISR waehrend Flash-Schreiben (safe_mode, NVS, OTA) -> Interrupt-Watchdog (30.10.2026).
+      CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH: "n"
+
+esphome:
+  includes:
+    - lwz_180   # Ordner: alle Header landen unter src/lwz_180/ (keine Namenskonflikte mit anderen Paketen)
+  build_flags:
+    # stiebel-i2c/availability nicht retained (kein Last Will auf diesem Topic)
+    - "-DI2CS_AVAIL_RETAIN=false"
+  on_boot:
+    - priority: 1000   # so frueh wie moeglich: Bus-Pins nicht floaten lassen
+      then:
+        - lambda: |-
+            i2c_pins_idle(${lwz_sda_gpio}, ${lwz_scl_gpio});
+    - priority: -100   # nach MQTT-Setup
+      then:
+        - lambda: |-
+            // txd -1: kein Pin fuer Testausgaben
+            i2cs_setup(${lwz_sda_gpio}, ${lwz_scl_gpio}, -1, ${lwz_internal_pullup}, ${lwz_i2c_slave_addr});
+            i2cs_lwz_ha_setup("${lwz_prefix}", "${lwz_device_name}", "${lwz_model}", "${lwz_availability_topic}");
+
+interval:
+  - interval: 20ms
+    then:
+      - lambda: 'i2cs_loop();'
+
+  - interval: 5s
+    then:
+      - lambda: 'i2cs_status();'
+
+ota:
+  - id: !extend ${lwz_ota_id}
+    # Slave waehrend OTA abbauen (kein I2C-Interrupt beim Flash-Schreiben, Bus beim Neustart frei)
+    on_begin:
+      - lambda: 'i2cs_ota_begin();'
+    on_error:
+      - lambda: 'i2cs_ota_error();'
