@@ -2,7 +2,7 @@
 
 English | [Deutsch](README-DE.md)
 
-ESPHome package for the Stiebel Eltron LWZ 180 ventilation unit. The ESP hangs as an I2C slave on the bus of the control panel, reads and reports actual values and display, and publishes them via MQTT discovery as its own Home Assistant device. Via an HA select and an HA switch it can set the fan level and start intensive ventilation.
+ESPHome package for the Stiebel Eltron LWZ 180 ventilation unit. The ESP connects as an I2C slave to the control panel bus, listens to the actual values and the display, and publishes them via MQTT discovery as its own Home Assistant device. Via an HA select and an HA switch it can set the fan level and start intensive ventilation.
 
 The analysis of the I2C bus originates from the predecessor project [kdarnok/lwz180](https://github.com/kdarnok/lwz180/), see Credits.
 
