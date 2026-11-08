@@ -5,7 +5,10 @@
 // Quellen der Zuordnung: referenzen/dokumentation/erkenntnisse_2026-10-30_lwz-i2c-slave-scan.md, Abschnitt 6.
 //  - Istwert-Paket: 00 e3 20 10 <typ> <hi> <lo> <crc>, CRC-8 Poly 0x49, Init 0 ueber Byte 1..6.
 //  - Am Display bestaetigt (30.10.2026): 00 01 06 07 08 09 0e 0f 10 11 14 15; 0c/0d sehr wahrscheinlich.
-//  - 16 50 51 5a nur nach kdarnok/lwz180, auf unserem Bus bisher nicht gesehen.
+//  - 16 50 51 5a nur nach kdarnok/lwz180, auf unserem Bus bisher nicht gesehen (5a: 2 Pakete in den Logs).
+//  - PR #2 (https://github.com/kdarnok/lwz180/pull/2, KKSzymanowski): 02 05 69 6d Luefterstufe, 12 13 Soll-Volumenstrom,
+//    1e-21 Volumenstrom Stufe 0-3, 35 36 Fuehlerwiderstand, 49 Bypass, 4d 53-55 Druck P10-P13, 1a Stunde.
+//    Auf unserem Bus bestaetigt (Logs 30.10.2026): 02 (6/6 = Display-Stufe), 12 13, 35 36. Rest ungesehen.
 //  - Luefterstufe aus dem Display-Paket 00 f7 20 ...: Byte 8 (ohne Adressbyte) nur gueltig, wenn
 //    Byte 20 Bit 2 oder Byte 19 Bit 4 gesetzt ist und der Code bekannt ist (06=1, 5b=2, 4f=3, 3f=0).
 // Discovery: retained, erst beim ersten Empfang eines Typs (keine toten Entitaeten), nach jedem
@@ -58,6 +61,28 @@ static const Def kDefs[] = {
     {0x5a, "filter_laufzeit", "Filterlaufzeit", "h", "duration", 1, false, nullptr},
     {0x51, "betriebsdauer_geraet", "Betriebsdauer Gerät", "d", "duration", 1, false, nullptr},
     {0x50, "betriebsdauer_luefter", "Betriebsdauer Lüfter", "d", "duration", 1, false, nullptr},
+    // Weitere Typen nach PR #2 (KKSzymanowski), auf unserem Bus bisher nicht gesehen (Entitaet entsteht erst beim Empfang):
+    {0x49, "bypass", "Bypass", nullptr, nullptr, 1, false, "mdi:valve"},  // 1 = aktiv, 0 = zu
+    {0x1e, "volumenstrom_stufe0", "Volumenstrom Stufe 0 (P6)", "m³/h", "volume_flow_rate", 1, false, nullptr},
+    {0x1f, "volumenstrom_stufe1", "Volumenstrom Stufe 1 (P7)", "m³/h", "volume_flow_rate", 1, false, nullptr},
+    {0x20, "volumenstrom_stufe2", "Volumenstrom Stufe 2 (P8)", "m³/h", "volume_flow_rate", 1, false, nullptr},
+    {0x21, "volumenstrom_stufe3", "Volumenstrom Stufe 3 (P9)", "m³/h", "volume_flow_rate", 1, false, nullptr},
+    {0x4d, "druck_p10", "Druck P10", "Pa", "pressure", 1, false, nullptr},
+    {0x53, "druck_p11", "Druck P11", "Pa", "pressure", 1, false, nullptr},
+    {0x54, "druck_p12", "Druck P12", "Pa", "pressure", 1, false, nullptr},
+    {0x55, "druck_p13", "Druck P13", "Pa", "pressure", 1, false, nullptr},
+    // Auf unserem Bus bestaetigt (Logs 30.10.2026): 12/13 nur bei Stufenwechsel (Werte 90/120/175 = P7/P8/P9),
+    // 35/36 etwa alle 1,3 s (PT1000: 35 passt zu 09 Fortluft, 36 zu 07 Zuluft, auf ca. 0,2 K)
+    {0x12, "zuluft_volumenstrom_soll", "Volumenstrom Soll Zuluft", "m³/h", "volume_flow_rate", 1, false, nullptr},
+    {0x13, "abluft_volumenstrom_soll", "Volumenstrom Soll Abluft", "m³/h", "volume_flow_rate", 1, false, nullptr},
+    // Fuehlerwiderstand, Diagnose (kein entity_category in Def, daher nur Icon). Zuordnung 35/36 laut PR #2 Abluft/Zuluft,
+    // unsere Logs sprechen fuer 35 = Fortluft-, 36 = Zuluftfuehler (Zuordnung ungeklaert, Name nach PR)
+    {0x35, "fuehler_abluft_widerstand", "Fühlerwiderstand Abluft", "Ω", nullptr, 10, false, "mdi:omega"},
+    {0x36, "fuehler_zuluft_widerstand", "Fühlerwiderstand Zuluft", "Ω", nullptr, 10, false, "mdi:omega"},
+    // Lüfterstufe Einstellung aus Typ 02 (nur bei Stufenwechsel, 0,4-1,5 s nach dem Display; 05/69/6d identisch).
+    // Bewusst separater Sensor: "luefterstufe" bleibt vom Display gespeist (schneller, auch nach Neustart).
+    {0x02, "luefterstufe_einstellung", "Lüfterstufe Einstellung", nullptr, nullptr, 1, false, "mdi:fan-speed-1"},
+    // 1a (aktuelle Stunde) bewusst weggelassen: Uhrzeit der LWZ, kein Messwert, auf unserem Bus nie gesehen.
     {kTypLevel, "luefterstufe", "Lüfterstufe", nullptr, nullptr, 1, false, "mdi:fan-speed-1"},
 };
 static const size_t kNumDefs = sizeof(kDefs) / sizeof(kDefs[0]);

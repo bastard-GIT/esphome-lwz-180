@@ -69,7 +69,10 @@ Alle gehören zu einem Gerät. Sensoren (Entitäten entstehen beim ersten Empfan
 - Feuchte Außenluft, Feuchte Abluft
 - Volumenstrom Zuluft, Volumenstrom Fortluft (m³/h)
 - Zuluftlüfter Ansteuerung, Fortluftlüfter Ansteuerung (%), Zuluftlüfter Drehzahl, Fortluftlüfter Drehzahl (rpm)
-- Lüfterstufe (aus dem Display)
+- Lüfterstufe (aus dem Display), Lüfterstufe Einstellung (aus Typ 02; kommt nur bei einem Stufenwechsel, 0,4-1,5 s nach dem Display)
+- Volumenstrom Soll Zuluft, Volumenstrom Soll Abluft (m³/h; auf unserem Bus bestätigt)
+- Fühlerwiderstand Abluft, Fühlerwiderstand Zuluft (Ω, PT1000; auf unserem Bus bestätigt)
+- Auf unserem Bus bisher nicht gesehen (aus PR #2 von kdarnok/lwz180): Bypass (0/1), Volumenstrom Stufe 0-3 (P6-P9, m³/h), Druck P10-P13 (Pa)
 - Vorheizung Leistung, Filterlaufzeit, Betriebsdauer Gerät, Betriebsdauer Lüfter (nur nach Fremdquelle bekannt, auf unserem Bus bisher nicht gesehen)
 
 Steuerung:
@@ -93,6 +96,8 @@ Topics `stiebel-i2c/*`: `status` (alle 5 s), `rx` (Sniffer, Standard aus), `cras
 ## Dank
 
 Grundlage für dieses Paket ist das Projekt [kdarnok/lwz180](https://github.com/kdarnok/lwz180/). Es hat den I2C-Bus der LWZ 180 analysiert und dokumentiert: Paketformat mit CRC, Istwerte, Tastencodes des Bedienteils und die Kodierung des Displays. Vielen Dank an kdarnok für diese Vorarbeit.
+
+Ebenfalls Dank an KKSzymanowski für die erweiterte Tabelle der Istwert-Typen ([PR #2](https://github.com/kdarnok/lwz180/pull/2)): Lüfterstufe, Soll-Volumenstrom, Fühlerwiderstand, Bypass, Drücke.
 
 Dieses Paket enthält keinen Code aus kdarnok/lwz180. Es ist eine eigene Umsetzung für ESP32 und ESPHome und nutzt die dort dokumentierten Erkenntnisse.
 

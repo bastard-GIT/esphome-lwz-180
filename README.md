@@ -69,7 +69,10 @@ All belong to one device. Sensors (entities are created when the value is first 
 - Humidity outside air: Feuchte Außenluft (outside air humidity), Feuchte Abluft (exhaust air humidity)
 - Airflow: Volumenstrom Zuluft (supply airflow), Volumenstrom Fortluft (outgoing airflow) (m³/h)
 - Zuluftlüfter Ansteuerung (supply fan control), Fortluftlüfter Ansteuerung (outgoing fan control) (%), Zuluftlüfter Drehzahl (supply fan speed), Fortluftlüfter Drehzahl (outgoing fan speed) (rpm)
-- Lüfterstufe (fan level) (from the display)
+- Lüfterstufe (fan level) (from the display), Lüfterstufe Einstellung (fan level setting, from type 02; sent only on a level change, 0.4-1.5 s after the display)
+- Volumenstrom Soll Zuluft, Volumenstrom Soll Abluft (target airflow, m³/h; confirmed on our bus)
+- Fühlerwiderstand Abluft, Fühlerwiderstand Zuluft (sensor resistance, Ω, PT1000; confirmed on our bus)
+- Not yet seen on our bus (from PR #2 of kdarnok/lwz180): Bypass (0/1), Volumenstrom Stufe 0-3 (P6-P9, m³/h), Druck P10-P13 (pressure, Pa)
 - Vorheizung Leistung (preheater power), Filterlaufzeit (filter runtime), Betriebsdauer Gerät (device operating hours), Betriebsdauer Lüfter (fan operating hours) (only known from an external source, not yet seen on our bus)
 
 Control:
@@ -93,6 +96,8 @@ Topics `stiebel-i2c/*`: `status` (every 5 s), `rx` (sniffer, off by default), `c
 ## Credits
 
 The basis for this package is the project [kdarnok/lwz180](https://github.com/kdarnok/lwz180/). It analyzed and documented the I2C bus of the LWZ 180: packet format with CRC, actual values, control panel key codes and the display encoding. Many thanks to kdarnok for this groundwork.
+
+Thanks also to KKSzymanowski for the extended table of actual-value types ([PR #2](https://github.com/kdarnok/lwz180/pull/2)): fan level, target airflow, sensor resistance, bypass, pressures.
 
 This package contains no code from kdarnok/lwz180. It is an independent implementation for ESP32 and ESPHome and uses the findings documented there.
 
