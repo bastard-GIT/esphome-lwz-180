@@ -98,4 +98,4 @@ Dieses Paket enthält keinen Code aus kdarnok/lwz180. Es ist eine eigene Umsetzu
 
 ## Lizenz
 
-Lizenz: noch offen.
+GPL-3.0, siehe [LICENSE](LICENSE). Die I2C-Busanalyse, auf der dieses Paket aufbaut, stammt von kdarnok/lwz180 (GPL-2.0); es wurde kein Code daraus übernommen.

@@ -98,4 +98,4 @@ This package contains no code from kdarnok/lwz180. It is an independent implemen
 
 ## License
 
-License: not yet decided.
+GPL-3.0, see [LICENSE](LICENSE). The I2C bus analysis this package builds on comes from kdarnok/lwz180 (GPL-2.0); no code was taken from it.
