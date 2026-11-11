@@ -14,6 +14,7 @@
 // Discovery: retained, erst beim ersten Empfang eines Typs (keine toten Entitaeten), nach jedem
 // MQTT-Reconnect erneut. State: bei Aenderung hoechstens alle 10 s, sonst spaetestens alle 5 min
 // (auch ohne neues Paket, solange der Bus lebt: die LWZ sendet manche Typen nur bei Aenderung).
+// Display-Symbole (Tabelle kSyms: Filter, Frost, Bypass, Uhr, Schloss, Power Vent) nur im Grundzustand als binary_sensor, aus erst nach 60 s ohne Bit.
 #ifndef I2CS_LWZ_HA_H
 #define I2CS_LWZ_HA_H
 
@@ -89,6 +90,29 @@ static const size_t kNumDefs = sizeof(kDefs) / sizeof(kDefs[0]);
 
 static const uint32_t kMinPubMs = 10000;   // Aenderung hoechstens alle 10 s
 static const uint32_t kMaxPubMs = 300000;  // ohne Aenderung spaetestens alle 5 min
+// Display-Symbole als binary_sensor. Quelle: lwz180_protocol.md Zeile 284-300.
+// Symbole nur im Grundzustand ausgewertet (im Menue leuchten Symbole abweichend, z. B. Filter in I4/P4).
+// idx = Index in seg (Display-Paket), mask = Bit.
+struct Sym {
+  uint8_t idx;
+  uint8_t mask;
+  const char *key;      // Topic- und ID-Teil
+  const char *name;     // Anzeigename in HA
+  const char *dev_class;  // nullptr = ohne device_class
+  const char *icon;
+};
+
+static const Sym kSyms[] = {
+    {23, 0x01, "filter_wechsel", "Filterwechsel", "problem", "mdi:air-filter"},  // bestaetigt
+    {23, 0x40, "frostschutz", "Frostschutz", "cold", "mdi:snowflake"},  // unbestaetigt (nur README und 3)
+    {24, 0x04, "bypass_aktiv", "Bypass aktiv", nullptr, "mdi:valve"},  // bestaetigt; key nicht "bypass" (Sensor Typ 0x49)
+    {15, 0x01, "zeitprogramm", "Zeitprogramm", nullptr, "mdi:clock-outline"},  // bestaetigt
+    {18, 0x04, "tastensperre", "Tastensperre", nullptr, "mdi:lock"},  // unbestaetigt; device_class lock waere invertiert (on = entsperrt), daher keine
+    {26, 0x01, "intensivlueftung", "Intensivlüftung", nullptr, "mdi:fan-plus"},  // Sketch, g_disp_pv nutzt dasselbe Bit
+};
+static const size_t kNumSyms = sizeof(kSyms) / sizeof(kSyms[0]);
+// Symbole blinken vermutlich; aus erst, wenn so lange nur Grundzustand-Pakete ohne Bit kamen; gilt je Symbol
+static const uint32_t kSymClearMs = 60000;
 // Verfuegbarkeit fuer alle LWZ-Werte gemeinsam (statt expire_after je Wert, Nutzerwunsch 2026-11-07):
 // <prefix>/availability = offline erst, wenn kAvailTimeoutMs lang kein gueltiges LWZ-Paket kam
 // (nach einem Neustart: kAvailTimeoutMs ab Boot). HA: availability_mode all mit dem MQTT-Availability-Topic der Firmware.
@@ -125,6 +149,19 @@ static bool g_disp_pv = false;     // Intensivlueftung (Power Vent) aktiv: seg[2
 static uint32_t g_disp_ms = 0;     // Zeit des letzten Grundzustand-Pakets
 static bool g_disp_seen = false;
 
+struct SymState {
+  bool on;
+  bool run;          // Streak ohne Bit laeuft
+  bool disc_sent;
+  bool published;
+  bool pub_on;       // zuletzt gesendet
+  uint32_t run_ms;   // Start des Streaks
+  uint32_t pub_ms;
+};
+
+static SymState g_sym[kNumSyms];
+static bool g_sym_seen = false;  // erstes Grundzustand-Paket kam
+
 static void copy_str(char *dst, size_t cap, const char *src) {
   if (src == nullptr) return;
   strncpy(dst, src, cap - 1);
@@ -143,6 +180,8 @@ static void setup(const char *prefix, const char *dev_name, const char *model, c
   // Ohne MQTT-Availability nur das eigene <prefix>/availability verwenden
   if (g_avail[0] == '\0') snprintf(g_avail, sizeof g_avail, "%s/availability", g_prefix);
   memset(g_st, 0, sizeof g_st);
+  memset(g_sym, 0, sizeof g_sym);
+  g_sym_seen = false;
   g_on = true;
   ESP_LOGI("lwzha", "LWZ-Werte an: Praefix %s, Geraet \"%s\"", g_prefix, g_dev_name);
 }
@@ -234,6 +273,53 @@ static void update(size_t i, int32_t raw, uint32_t ms) {
   if (!s.published || (raw != s.pub_raw && age >= kMinPubMs) || age >= kMaxPubMs) send_state(i, ms);
 }
 
+// binary_sensor fuer ein Display-Symbol. Kein eigenes ct::set: pub() setzt die Phase selbst.
+static void send_sym_discovery(size_t i) {
+  const Sym &s = kSyms[i];
+  char topic[128];
+  snprintf(topic, sizeof topic, "homeassistant/binary_sensor/%s/%s/config", g_prefix, s.key);
+  char buf[768];
+  int n = snprintf(buf, sizeof buf,
+                   "{\"name\":\"%s\",\"unique_id\":\"%s_%s\",\"object_id\":\"%s_%s\","
+                   "\"state_topic\":\"%s/%s/state\",\"payload_on\":\"ON\",\"payload_off\":\"OFF\","
+                   "\"availability\":[{\"topic\":\"%s\"},{\"topic\":\"%s/availability\"}],"
+                   "\"availability_mode\":\"all\"",
+                   s.name, g_prefix, s.key, g_prefix, s.key, g_prefix, s.key, g_avail, g_prefix);
+  if (s.dev_class != nullptr && n > 0 && (size_t)n < sizeof buf)
+    n += snprintf(buf + n, sizeof buf - n, ",\"device_class\":\"%s\"", s.dev_class);
+  if (s.icon != nullptr && n > 0 && (size_t)n < sizeof buf)
+    n += snprintf(buf + n, sizeof buf - n, ",\"icon\":\"%s\"", s.icon);
+  if (n > 0 && (size_t)n < sizeof buf)
+    n += snprintf(buf + n, sizeof buf - n,
+                  ",\"device\":{\"identifiers\":[\"stiebel_eltron_%s\"],\"name\":\"%s\","
+                  "\"manufacturer\":\"Stiebel Eltron\",\"model\":\"%s\"}}",
+                  g_prefix, g_dev_name, g_model);
+  if (n <= 0 || (size_t)n >= sizeof buf) {
+    ESP_LOGW("lwzha", "Discovery zu lang: %s", s.key);
+    return;
+  }
+  pub(topic, buf, (size_t)n, true);
+  g_sym[i].disc_sent = true;
+}
+
+static void send_sym_state(size_t i, uint32_t ms) {
+  const Sym &s = kSyms[i];
+  char topic[96];
+  snprintf(topic, sizeof topic, "%s/%s/state", g_prefix, s.key);
+  const bool on = g_sym[i].on;
+  pub(topic, on ? "ON" : "OFF", on ? 2 : 3, true);
+  g_sym[i].pub_on = on;
+  g_sym[i].pub_ms = ms;
+  g_sym[i].published = true;
+}
+
+static void sym_update(size_t i, uint32_t ms) {
+  if (!g_sym_seen || !connected()) return;
+  const SymState &st = g_sym[i];
+  if (!st.disc_sent) send_sym_discovery(i);
+  if (!st.published || st.on != st.pub_on || (uint32_t)(ms - st.pub_ms) >= kMaxPubMs) send_sym_state(i, ms);
+}
+
 static int find(uint8_t typ) {
   for (size_t i = 0; i < kNumDefs; ++i)
     if (kDefs[i].typ == typ) return (int)i;
@@ -278,6 +364,24 @@ static void on_frame(const Frame &f, uint32_t ms) {
       g_disp_pv = (seg[26] & 0x01) != 0;
       g_disp_ms = ms;
       g_disp_seen = true;
+      // Symbole: an bei Bit, aus erst nach kSymClearMs ohne Bit (je Symbol)
+      g_sym_seen = true;
+      for (size_t k = 0; k < kNumSyms; ++k) {
+        const Sym &sy = kSyms[k];
+        SymState &st = g_sym[k];
+        const bool bit = (seg[sy.idx] & sy.mask) != 0;
+        if (bit) {
+          st.on = true;
+          st.run = false;
+        } else {
+          if (!st.run) {
+            st.run = true;
+            st.run_ms = ms;
+          }
+          if (st.on && (uint32_t)(ms - st.run_ms) >= kSymClearMs) st.on = false;
+        }
+        sym_update(k, ms);
+      }
     }
     const int i = find(kTypLevel);
     if (i < 0) return;
@@ -296,6 +400,10 @@ static void poll(uint32_t ms) {
     for (size_t i = 0; i < kNumDefs; ++i) {
       g_st[i].disc_sent = false;
       g_st[i].published = false;
+    }
+    for (size_t k = 0; k < kNumSyms; ++k) {
+      g_sym[k].disc_sent = false;
+      g_sym[k].published = false;
     }
   }
   if (c && !g_was_connected) g_avail_state = -1;  // nach Reconnect neu senden
@@ -322,6 +430,21 @@ static void poll(uint32_t ms) {
     // Letzten Wert alle kMaxPubMs wiederholen, solange der Bus lebt (Verlauf in HA bleibt durchgehend).
     const bool bus_alive = g_any_valid && (uint32_t)(ms - g_last_valid_ms) < kBusAliveMs;
     if (bus_alive && (uint32_t)(ms - s.pub_ms) >= kMaxPubMs) send_state(i, ms);
+  }
+  // Display-Symbole: Discovery und State wie oben, Wiederholung nur bei lebendem Bus
+  if (g_sym_seen) {
+    const bool sym_alive = g_any_valid && (uint32_t)(ms - g_last_valid_ms) < kBusAliveMs;
+    for (size_t k = 0; k < kNumSyms; ++k) {
+      SymState &st = g_sym[k];
+      // Aus auch ohne weiteres Paket: die LWZ sendet das Display evtl. nur bei Aenderung
+      if (st.on && st.run && (uint32_t)(ms - st.run_ms) >= kSymClearMs) st.on = false;
+      if (!st.disc_sent) send_sym_discovery(k);
+      if (!st.published || st.on != st.pub_on) {
+        send_sym_state(k, ms);
+      } else if (sym_alive && (uint32_t)(ms - st.pub_ms) >= kMaxPubMs) {
+        send_sym_state(k, ms);
+      }
+    }
   }
 }
 

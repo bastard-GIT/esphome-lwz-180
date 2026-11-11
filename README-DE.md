@@ -74,6 +74,7 @@ Alle gehören zu einem Gerät. Sensoren (Entitäten entstehen beim ersten Empfan
 - Fühlerwiderstand Fortluft, Fühlerwiderstand Zuluft (Ω, PT1000; auf unserem Bus bestätigt; PR #2 nennt 35 Abluft, unsere Logs zeigen Fortluft)
 - Auf unserem Bus bisher nicht gesehen (aus PR #2 von kdarnok/lwz180): Bypass (0/1), Volumenstrom Stufe 0-3 (P6-P9, m³/h), Druck P10-P13 (Pa)
 - Vorheizung Leistung, Filterlaufzeit, Betriebsdauer Gerät, Betriebsdauer Lüfter (nur nach Fremdquelle bekannt, auf unserem Bus bisher nicht gesehen)
+- Binär-Sensoren (alle nur im Grundzustand ausgewertet, erst nach 60 s ohne Symbol aus (Symbole blinken vermutlich), per MQTT-Discovery erst nach dem ersten Grundzustand-Paket): Filterwechsel (Filtersymbol, bestätigt, device_class problem), Bypass aktiv (bestätigt), Zeitprogramm (Uhr-Symbol, bestätigt), Intensivlüftung (Sketch/Power Vent, nicht unabhängig bestätigt), Frostschutz (unbestätigt), Tastensperre (Schloss, unbestätigt)
 
 Steuerung:
 
