@@ -113,6 +113,9 @@ static const Sym kSyms[] = {
 static const size_t kNumSyms = sizeof(kSyms) / sizeof(kSyms[0]);
 // Symbole blinken vermutlich; aus erst, wenn so lange nur Grundzustand-Pakete ohne Bit kamen; gilt je Symbol
 static const uint32_t kSymClearMs = 60000;
+// poll() darf ein Symbol nur ausschalten, wenn so kurz zuvor ein Grundzustand-Paket kam (Display ca. alle 3 s,
+// max. 10,8 s im Mitschnitt 2026-10-25). Bei Busausfall bleibt der letzte Zustand, Verfuegbarkeit regelt kAvailTimeoutMs.
+static const uint32_t kSymFreshMs = 15000;
 // Verfuegbarkeit fuer alle LWZ-Werte gemeinsam (statt expire_after je Wert, Nutzerwunsch 2026-11-07):
 // <prefix>/availability = offline erst, wenn kAvailTimeoutMs lang kein gueltiges LWZ-Paket kam
 // (nach einem Neustart: kAvailTimeoutMs ab Boot). HA: availability_mode all mit dem MQTT-Availability-Topic der Firmware.
@@ -434,10 +437,11 @@ static void poll(uint32_t ms) {
   // Display-Symbole: Discovery und State wie oben, Wiederholung nur bei lebendem Bus
   if (g_sym_seen) {
     const bool sym_alive = g_any_valid && (uint32_t)(ms - g_last_valid_ms) < kBusAliveMs;
+    const bool disp_fresh = g_disp_seen && (uint32_t)(ms - g_disp_ms) < kSymFreshMs;
     for (size_t k = 0; k < kNumSyms; ++k) {
       SymState &st = g_sym[k];
-      // Aus auch ohne weiteres Paket: die LWZ sendet das Display evtl. nur bei Aenderung
-      if (st.on && st.run && (uint32_t)(ms - st.run_ms) >= kSymClearMs) st.on = false;
+      // Aus auch zwischen zwei Paketen, aber nur bei frischem Grundzustand-Paket (nicht bei Busausfall)
+      if (disp_fresh && st.on && st.run && (uint32_t)(ms - st.run_ms) >= kSymClearMs) st.on = false;
       if (!st.disc_sent) send_sym_discovery(k);
       if (!st.published || st.on != st.pub_on) {
         send_sym_state(k, ms);
