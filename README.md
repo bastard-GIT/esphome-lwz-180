@@ -73,7 +73,8 @@ All belong to one device. Sensors (entities are created when the value is first 
 - Volumenstrom Soll Zuluft, Volumenstrom Soll Abluft (target airflow, m³/h; confirmed on our bus)
 - Fühlerwiderstand Fortluft, Fühlerwiderstand Zuluft (sensor resistance, Ω, PT1000; confirmed on our bus; PR #2 lists 35 as exhaust air, our logs show outgoing air)
 - Not yet seen on our bus (from PR #2 of kdarnok/lwz180): Bypass (0/1), Volumenstrom Stufe 0-3 (P6-P9, m³/h), Druck P10-P13 (pressure, Pa)
-- Vorheizung Leistung (preheater power), Filterlaufzeit (filter runtime), Betriebsdauer Gerät (device operating hours), Betriebsdauer Lüfter (fan operating hours) (only known from an external source, not yet seen on our bus)
+- Filterlaufzeit (filter runtime, h, hourly), Betriebsdauer Gerät (device operating time), Betriebsdauer Lüfter (fan operating time) (d; from kdarnok, confirmed on our bus 2026-11-11)
+- Vorheizung Leistung (preheater power) (only known from an external source, not yet seen on our bus)
 - Binary sensors (all evaluated only in the basic state, switched off only after 60 s without the symbol (symbols presumably blink), published via MQTT discovery only after the first basic-state packet): Filter change (filter symbol, confirmed, device_class problem), Bypass active (confirmed), Timer program (clock symbol, confirmed), Intensive ventilation (sketch/power vent symbol, not independently confirmed), Frost protection (unconfirmed), Key lock (padlock symbol, unconfirmed)
 
 Control:

@@ -5,7 +5,7 @@
 // Quellen der Zuordnung: referenzen/dokumentation/erkenntnisse_2026-10-30_lwz-i2c-slave-scan.md, Abschnitt 6.
 //  - Istwert-Paket: 00 e3 20 10 <typ> <hi> <lo> <crc>, CRC-8 Poly 0x49, Init 0 ueber Byte 1..6.
 //  - Am Display bestaetigt (30.10.2026): 00 01 06 07 08 09 0e 0f 10 11 14 15; 0c/0d sehr wahrscheinlich.
-//  - 16 50 51 5a nur nach kdarnok/lwz180, auf unserem Bus bisher nicht gesehen (5a: 2 Pakete in den Logs).
+//  - 16 50 51 5a nach kdarnok/lwz180. 50 51 5a auf unserem Bus bestaetigt (HA 2026-11-11, 5a stuendlich), 16 ungesehen.
 //  - PR #2 (https://github.com/kdarnok/lwz180/pull/2, KKSzymanowski): 02 05 69 6d Luefterstufe, 12 13 Soll-Volumenstrom,
 //    1e-21 Volumenstrom Stufe 0-3, 35 36 Fuehlerwiderstand, 49 Bypass, 4d 53-55 Druck P10-P13, 1a Stunde.
 //    Auf unserem Bus bestaetigt (Logs 30.10.2026): 02 (6/6 = Display-Stufe), 12 13, 35 36. Rest ungesehen.
@@ -57,7 +57,7 @@ static const Def kDefs[] = {
     {0x15, "fortluftluefter_ansteuerung", "Fortluftlüfter Ansteuerung", "%", nullptr, 10, false, "mdi:fan"},
     {0x0c, "zuluftluefter_drehzahl", "Zuluftlüfter Drehzahl", "rpm", nullptr, 1, false, "mdi:fan"},
     {0x0d, "fortluftluefter_drehzahl", "Fortluftlüfter Drehzahl", "rpm", nullptr, 1, false, "mdi:fan"},
-    // nur nach kdarnok, auf unserem Bus bisher nicht gesehen (Entitaet entsteht erst beim ersten Empfang)
+    // nach kdarnok; 16 ungesehen, 5a 51 50 bestaetigt (Entitaet entsteht erst beim ersten Empfang)
     {0x16, "vorheizung_leistung", "Vorheizung Leistung", "%", nullptr, 1, false, "mdi:radiator"},
     {0x5a, "filter_laufzeit", "Filterlaufzeit", "h", "duration", 1, false, nullptr},
     {0x51, "betriebsdauer_geraet", "Betriebsdauer Gerät", "d", "duration", 1, false, nullptr},
