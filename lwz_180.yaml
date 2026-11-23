@@ -26,7 +26,7 @@
 #
 #  MQTT:
 #    <prefix>/<wert>/state, <prefix>/availability, <prefix>/luefterstufe/set, <prefix>/intensivlueftung/set
-#    Diagnose: stiebel-i2c/status (5 s), stiebel-i2c/rx (Sniffer, Standard aus), stiebel-i2c/crash,
+#    Diagnose: stiebel-i2c/status (5 s), stiebel-i2c/rx (Sniffer, Standard an), stiebel-i2c/crash,
 #    Befehle stiebel-i2c/cmd/sniff, cmd/scan, cmd/key
 #
 

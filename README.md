@@ -93,7 +93,7 @@ The ESP presses keys like the control panel and checks the result on the display
 
 ## Diagnostics
 
-Topics `stiebel-i2c/*`: `status` (every 5 s), `rx` (sniffer, off by default), `crash`, commands `cmd/sniff`, `cmd/scan`, `cmd/key`. `cmd/key` sends key codes onto the bus, use with caution.
+Topics `stiebel-i2c/*`: `status` (every 5 s), `rx` (sniffer, on by default), `crash`, commands `cmd/sniff`, `cmd/scan`, `cmd/key`. `cmd/key` sends key codes onto the bus, use with caution.
 
 ## Credits
 

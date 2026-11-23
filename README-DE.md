@@ -93,7 +93,7 @@ Der ESP drückt Tasten wie das Bedienteil und prüft das Ergebnis im Display (ge
 
 ## Diagnose
 
-Topics `stiebel-i2c/*`: `status` (alle 5 s), `rx` (Sniffer, Standard aus), `crash`, Befehle `cmd/sniff`, `cmd/scan`, `cmd/key`. `cmd/key` sendet Tastencodes auf den Bus, mit Vorsicht benutzen.
+Topics `stiebel-i2c/*`: `status` (alle 5 s), `rx` (Sniffer, Standard an), `crash`, Befehle `cmd/sniff`, `cmd/scan`, `cmd/key`. `cmd/key` sendet Tastencodes auf den Bus, mit Vorsicht benutzen.
 
 ## Dank
 
